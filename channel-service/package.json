@@ -1,0 +1,20 @@
+{
+  "name": "channel-service",
+  "version": "1.0.0",
+  "description": "Channel Service - simulates WhatsApp/Email/SMS delivery and sends async callbacks to CRM",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "axios": "^1.6.2",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
