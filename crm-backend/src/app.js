@@ -15,9 +15,10 @@ const morgan = require('morgan');
 
 // ─── Route Imports ───────────────────────────────────────────────────────────
 const customerRoutes = require('./routes/customerRoutes');
-const orderRoutes = require('./routes/orderRoutes');
+const orderRoutes    = require('./routes/orderRoutes');
 const campaignRoutes = require('./routes/campaignRoutes');
-const receiptRoutes = require('./routes/receiptRoutes'); // PHASE 4: machine-to-machine callbacks from channel-service
+const receiptRoutes  = require('./routes/receiptRoutes'); // PHASE 4: machine-to-machine callbacks from channel-service
+const aiRoutes       = require('./routes/aiRoutes');       // PHASE 5: AI Marketing Agent
 
 // ─── Middleware Imports ───────────────────────────────────────────────────────
 const errorHandler = require('./middleware/errorHandler');
@@ -62,6 +63,12 @@ app.use('/api/campaigns', campaignRoutes);
 // PHASE 4: Receipt endpoint — machine-to-machine callback from channel-service
 // POST /api/receipts/channel — channel-service calls this after each delivery event
 app.use('/api/receipts', receiptRoutes);
+
+// PHASE 5: AI Marketing Agent
+// POST /api/ai/segment    — natural language → customer segment rules
+// POST /api/ai/message    — goal + segment + channel → personalized message template
+// GET  /api/ai/insights/:campaignId — campaign stats → AI analysis + recommendations
+app.use('/api/ai', aiRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 // This runs if no route above matched the request
