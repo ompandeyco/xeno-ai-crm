@@ -1,13 +1,12 @@
-// messageRoutes.js
-// Route for receiving dispatch requests from the CRM backend
+// messageRoutes.js — Route for receiving dispatch requests from CRM backend.
+//
+// Base path /api/messages is registered in app.js.
 
 const express = require('express');
 const router = express.Router();
+const { sendMessage } = require('../controllers/messageController');
 
-// Controller will be imported once implemented
-// const { dispatchMessage } = require('../controllers/messageController');
-
-// POST /api/send — CRM Backend calls this to send a message
-// router.post('/send', dispatchMessage);
+// POST /api/messages/send — receive and process a message dispatch
+router.post('/send', sendMessage);
 
 module.exports = router;

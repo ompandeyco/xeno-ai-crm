@@ -16,6 +16,7 @@ const morgan = require('morgan');
 // ─── Route Imports ───────────────────────────────────────────────────────────
 const customerRoutes = require('./routes/customerRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const campaignRoutes = require('./routes/campaignRoutes');
 
 // ─── Middleware Imports ───────────────────────────────────────────────────────
 const errorHandler = require('./middleware/errorHandler');
@@ -53,6 +54,9 @@ app.use('/api/customers', customerRoutes);
 
 // All order endpoints: /api/orders, /api/orders/customer/:customerId
 app.use('/api/orders', orderRoutes);
+
+// All campaign endpoints: /api/campaigns, /api/campaigns/:id/send, /api/campaigns/receipt
+app.use('/api/campaigns', campaignRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 // This runs if no route above matched the request
