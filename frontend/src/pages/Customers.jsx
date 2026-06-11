@@ -5,6 +5,7 @@ import { Search, Filter } from 'lucide-react';
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -13,6 +14,7 @@ const Customers = () => {
         setCustomers(res.data.data);
       } catch (err) {
         console.error('Failed to fetch customers', err);
+        setError('Failed to load customers. Please check your connection.');
       } finally {
         setLoading(false);
       }
@@ -68,6 +70,12 @@ const Customers = () => {
                     <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-20"></div></td>
                   </tr>
                 ))
+              ) : error ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-red-600 bg-red-50">
+                    {error}
+                  </td>
+                </tr>
               ) : customers.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-8 text-center text-gray-500">

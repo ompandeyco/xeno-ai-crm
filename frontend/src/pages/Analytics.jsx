@@ -5,6 +5,7 @@ import { Mail, CheckCircle2, MousePointerClick, RefreshCcw, Sparkles } from 'luc
 const Analytics = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // States for insights modal/drawer
   const [selectedCampaign, setSelectedCampaign] = useState(null);
@@ -21,6 +22,7 @@ const Analytics = () => {
       setCampaigns(res.data.data);
     } catch (err) {
       console.error('Failed to fetch campaigns', err);
+      setError('Failed to load campaign data.');
     } finally {
       setLoading(false);
     }
@@ -62,7 +64,11 @@ const Analytics = () => {
         </div>
 
         <div className="space-y-4">
-          {loading ? (
+          {error ? (
+            <div className="bg-red-50 text-red-800 p-4 rounded-xl border border-red-100 text-center">
+              {error}
+            </div>
+          ) : loading ? (
             [...Array(3)].map((_, i) => (
               <div key={i} className="h-32 bg-white rounded-xl border border-gray-200 animate-pulse" />
             ))

@@ -12,6 +12,7 @@ const Dashboard = () => {
   });
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Mock data for charts to make the dashboard look populated
   const performanceData = [
@@ -62,6 +63,7 @@ const Dashboard = () => {
         });
       } catch (err) {
         console.error('Failed to load dashboard stats', err);
+        setError('Failed to load dashboard metrics. Please refresh the page.');
       } finally {
         setLoading(false);
       }
@@ -77,7 +79,11 @@ const Dashboard = () => {
         <p className="text-gray-500">Here's what's happening with your marketing campaigns today.</p>
       </div>
 
-      {loading ? (
+      {error ? (
+        <div className="bg-red-50 text-red-800 p-4 rounded-xl mb-8 border border-red-100">
+          {error}
+        </div>
+      ) : loading ? (
         <div className="animate-pulse grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-32" />
