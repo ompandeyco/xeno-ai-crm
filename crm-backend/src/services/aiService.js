@@ -276,24 +276,52 @@ Respond ONLY with this exact JSON, no other text:
 // and recommends concrete ACTIONS the marketer should take next.
 // This is decision-support intelligence, not Q&A.
 
-const INSIGHTS_FALLBACK = {
-  summary: 'Campaign data received. Performance analysis unavailable — please check AI configuration.',
-  recommendations: [
-    'Review delivery rate — if below 80%, check contact list quality.',
-    'If open rate is below 25%, consider testing a different subject line or channel.',
-    'High click-through rate (>5%) indicates strong audience-message fit.',
-  ],
-  fallback: true,
-};
-
 const generateCampaignInsights = async (stats, campaignName = '', channel = '') => {
-  const { sent = 0, delivered = 0, opened = 0, clicked = 0, failed = 0 } = stats;
+  const { audienceSize = 0, sent = 0, delivered = 0, opened = 0, clicked = 0, failed = 0 } = stats;
 
-  // Pre-compute rates for the prompt — Gemini is better at interpreting percentages
-  const deliveryRate = sent > 0 ? ((delivered / sent) * 100).toFixed(1) : '0';
-  const openRate     = delivered > 0 ? ((opened / delivered) * 100).toFixed(1) : '0';
-  const clickRate    = opened > 0 ? ((clicked / opened) * 100).toFixed(1) : '0';
+  // Calculate actual rates
+  const deliveryRateVal = sent > 0 ? (delivered / sent) : 0;
+  const openRateVal     = delivered > 0 ? (opened / delivered) : 0;
+  const clickRateVal    = delivered > 0 ? (clicked / delivered) : 0;
+
+  // Pre-compute percentages for the prompt
+  const deliveryRate = (deliveryRateVal * 100).toFixed(1);
+  const openRate     = (openRateVal * 100).toFixed(1);
+  const clickRate    = (clickRateVal * 100).toFixed(1);
   const failureRate  = sent > 0 ? ((failed / sent) * 100).toFixed(1) : '0';
+
+  const getDynamicFallback = () => {
+    let summary = '';
+    const recommendations = [];
+
+    const formattedChannel = channel ? channel.charAt(0).toUpperCase() + channel.slice(1) : 'The';
+
+    if (openRateVal >= 0.4) {
+      summary = `Strong engagement detected. ${formattedChannel} campaign achieved ~${Math.round(openRateVal * 100)}% open rate and ~${Math.round(clickRateVal * 100)}% click rate. Similar audiences can be targeted again.`;
+      recommendations.push("Consider increasing the audience size for similar campaigns.");
+      recommendations.push("Reuse the message copy as it proved highly effective.");
+    } else if (openRateVal < 0.2) {
+      summary = `Audience reached successfully but message engagement was weak. Try changing copy or channel.`;
+      recommendations.push("Experiment with different subject lines or introductory text.");
+      recommendations.push(`Test if this segment responds better on a channel other than ${channel || 'this one'}.`);
+    } else {
+      summary = `Campaign delivered to ${delivered} contacts with an open rate of ${openRate}%. Performance is moderate.`;
+      recommendations.push("Try A/B testing different messages to improve engagement.");
+      recommendations.push("Refine the audience segment for better targeting.");
+    }
+
+    if (deliveryRateVal < 0.8 && sent > 0) {
+      recommendations.push(`Delivery rate was low (${deliveryRate}%). Please check your contact list for invalid addresses/numbers.`);
+    }
+
+    return {
+      summary,
+      recommendations,
+      fallback: true
+    };
+  };
+
+  const dynamicFallback = getDynamicFallback();
 
   const prompt = `
 You are a senior marketing analyst for a consumer brand CRM.
@@ -303,10 +331,11 @@ CAMPAIGN: "${campaignName || 'Unnamed campaign'}"
 CHANNEL: ${channel?.toUpperCase() || 'UNKNOWN'}
 
 PERFORMANCE DATA:
+- Audience Size:     ${audienceSize}
 - Messages Sent:     ${sent}
 - Delivered:         ${delivered} (${deliveryRate}% delivery rate)
 - Opened:            ${opened} (${openRate}% open rate of delivered)
-- Clicked:           ${clicked} (${clickRate}% click rate of opened)
+- Clicked:           ${clicked} (${clickRate}% click rate of delivered)
 - Failed:            ${failed} (${failureRate}% failure rate)
 
 INDUSTRY BENCHMARKS FOR REFERENCE:
@@ -330,16 +359,16 @@ Respond ONLY with this exact JSON, no other text:
 
   if (error || !data) {
     console.warn(`[AI-SERVICE] generateCampaignInsights fallback triggered: ${error}`);
-    return INSIGHTS_FALLBACK;
+    return dynamicFallback;
   }
 
   // Validate recommendations is an array of strings
   const recommendations = Array.isArray(data.recommendations)
     ? data.recommendations.filter(r => typeof r === 'string').slice(0, 6)
-    : INSIGHTS_FALLBACK.recommendations;
+    : dynamicFallback.recommendations;
 
   return {
-    summary:         String(data.summary || INSIGHTS_FALLBACK.summary),
+    summary:         String(data.summary || dynamicFallback.summary),
     recommendations,
     fallback: false,
   };

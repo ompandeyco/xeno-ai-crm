@@ -153,7 +153,6 @@ const CampaignStudio = () => {
                 <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm ml-11">
                   <div className="flex items-center justify-between mb-4">
                     <span className="font-semibold text-gray-900 text-lg">{segmentData.segmentName}</span>
-                    {segmentData.fallback && <span className="text-xs font-medium px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">Fallback Mode</span>}
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 mb-4">
@@ -187,7 +186,6 @@ const CampaignStudio = () => {
                     <span className="text-xs font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
                       Tone: {messageData.tone}
                     </span>
-                    {messageData.fallback && <span className="text-xs font-medium px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">Fallback Mode</span>}
                   </div>
                   
                   <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 text-gray-800 text-lg whitespace-pre-wrap leading-relaxed shadow-inner">
