@@ -1,9 +1,12 @@
 // campaignController.js — HTTP layer for campaign endpoints.
 //
-// Same pattern as customerController:
-//   READ from req → CALL service → WRITE res
+// PHASE 4 CHANGES:
+//   - Renamed sendCampaign → launchCampaign (route: /launch instead of /send)
+//   - Removed processDeliveryReceipt — moved to receiptController.js
+//     Receipts are now machine-to-machine at POST /api/receipts/channel
 //
-// Zero business logic lives here. All decisions are made in campaignService.js.
+// Pattern: READ from req → CALL service → WRITE res
+// Zero business logic lives here. All decisions are in campaignService.js.
 
 const asyncHandler = require('../utils/asyncHandler');
 const campaignService = require('../services/campaignService');
@@ -69,49 +72,26 @@ const previewAudience = asyncHandler(async (req, res) => {
   });
 });
 
-// ─── POST /api/campaigns/:id/send ────────────────────────────────────────────
-// Launch the campaign — resolves audience and dispatches messages.
-// This is the main action that triggers the entire delivery pipeline.
-const sendCampaign = asyncHandler(async (req, res) => {
+// ─── POST /api/campaigns/:id/launch ──────────────────────────────────────────
+// Launch the campaign: resolve audience, dispatch messages, trigger delivery lifecycle.
+//
+// PHASE 4: Renamed from /send to /launch.
+// WHY 'launch'? 'send' implies synchronous delivery. 'launch' implies triggering
+// an asynchronous process — which is exactly what this does. The response comes
+// back immediately with dispatch stats; delivery receipts arrive later via callbacks.
+const launchCampaign = asyncHandler(async (req, res) => {
   const campaign = await campaignService.sendCampaign(req.params.id);
 
   res.status(200).json({
     success: true,
-    message: 'Campaign dispatched successfully',
+    message: 'Campaign launched — messages dispatched to channel-service',
     data: campaign,
-  });
-});
-
-// ─── POST /api/campaigns/receipt ─────────────────────────────────────────────
-// Callback endpoint for the channel-service.
-// Channel-service calls this after simulating delivery.
-//
-// Body: { logId, status: 'sent' | 'failed', failureReason?: string }
-//
-// NOTE: This route must be registered BEFORE '/:id' in the router,
-// otherwise Express will try to match 'receipt' as a campaign ID (a 404).
-const processDeliveryReceipt = asyncHandler(async (req, res) => {
-  const { logId, status, failureReason } = req.body;
-
-  if (!logId || !status) {
-    return res.status(400).json({
-      success: false,
-      message: 'logId and status are required',
-    });
-  }
-
-  const log = await campaignService.processDeliveryReceipt({ logId, status, failureReason });
-
-  res.status(200).json({
-    success: true,
-    message: `Delivery receipt processed: ${status}`,
-    data: log,
   });
 });
 
 // ─── GET /api/campaigns/:id/logs ─────────────────────────────────────────────
 // Return all CommunicationLog records for a campaign.
-// Used by the campaign detail view to show per-customer delivery status.
+// PHASE 4: Each log now includes statusHistory[] with the full event chain.
 const getCampaignLogs = asyncHandler(async (req, res) => {
   const logs = await campaignService.getCampaignLogs(req.params.id);
 
@@ -127,7 +107,6 @@ module.exports = {
   getCampaigns,
   getCampaignById,
   previewAudience,
-  sendCampaign,
-  processDeliveryReceipt,
+  launchCampaign,
   getCampaignLogs,
 };

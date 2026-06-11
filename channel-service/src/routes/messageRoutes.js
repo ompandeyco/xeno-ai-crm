@@ -1,12 +1,15 @@
-// messageRoutes.js — Route for receiving dispatch requests from CRM backend.
+// messageRoutes.js — Routes for channel-service message dispatch.
 //
-// Base path /api/messages is registered in app.js.
+// PHASE 4: Route path changed to /channel/send to match spec.
+// Registered in app.js as: app.use('/', messageRoutes)
+// So the full path becomes: POST /channel/send
 
 const express = require('express');
 const router = express.Router();
 const { sendMessage } = require('../controllers/messageController');
 
-// POST /api/messages/send — receive and process a message dispatch
-router.post('/send', sendMessage);
+// POST /channel/send — receive dispatch request from CRM backend
+// Returns 202 Accepted immediately. Delivery happens asynchronously.
+router.post('/channel/send', sendMessage);
 
 module.exports = router;

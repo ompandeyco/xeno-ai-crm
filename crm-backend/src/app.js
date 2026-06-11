@@ -17,6 +17,7 @@ const morgan = require('morgan');
 const customerRoutes = require('./routes/customerRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const campaignRoutes = require('./routes/campaignRoutes');
+const receiptRoutes = require('./routes/receiptRoutes'); // PHASE 4: machine-to-machine callbacks from channel-service
 
 // ─── Middleware Imports ───────────────────────────────────────────────────────
 const errorHandler = require('./middleware/errorHandler');
@@ -55,8 +56,12 @@ app.use('/api/customers', customerRoutes);
 // All order endpoints: /api/orders, /api/orders/customer/:customerId
 app.use('/api/orders', orderRoutes);
 
-// All campaign endpoints: /api/campaigns, /api/campaigns/:id/send, /api/campaigns/receipt
+// All campaign endpoints: /api/campaigns, /api/campaigns/:id/send, etc.
 app.use('/api/campaigns', campaignRoutes);
+
+// PHASE 4: Receipt endpoint — machine-to-machine callback from channel-service
+// POST /api/receipts/channel — channel-service calls this after each delivery event
+app.use('/api/receipts', receiptRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 // This runs if no route above matched the request

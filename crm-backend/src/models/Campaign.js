@@ -51,12 +51,18 @@ const segmentRuleSchema = new mongoose.Schema(
 );
 
 // ─── Sub-schema: Campaign Stats ───────────────────────────────────────────────
+// PHASE 4: Added 'opened' and 'clicked' to track the full engagement funnel:
+//   audienceSize → sent → delivered → opened → clicked
+//   Each metric narrows: not everyone who receives opens, not everyone who opens clicks.
+//   This funnel is the core analytics output of the CRM.
 const campaignStatsSchema = new mongoose.Schema(
   {
     audienceSize: { type: Number, default: 0 },
-    sent:         { type: Number, default: 0 },
-    delivered:    { type: Number, default: 0 },
-    failed:       { type: Number, default: 0 },
+    sent:         { type: Number, default: 0 }, // Channel-service accepted the message
+    delivered:    { type: Number, default: 0 }, // Confirmed delivery to device
+    opened:       { type: Number, default: 0 }, // Customer opened the message
+    clicked:      { type: Number, default: 0 }, // Customer clicked a link inside
+    failed:       { type: Number, default: 0 }, // Delivery failed permanently
   },
   { _id: false }
 );

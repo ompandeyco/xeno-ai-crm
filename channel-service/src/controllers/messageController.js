@@ -1,70 +1,65 @@
 // messageController.js — Receives dispatch requests from the CRM backend.
 //
+// PHASE 4 CHANGES:
+//   - Endpoint is now POST /channel/send (matches spec)
+//   - Accepts full customer object { name, email, phone }
+//   - Uses communicationId (not logId) to match the updated CommunicationLog
+//   - Invokes simulateFullLifecycle which sends multiple status callbacks
+//   - Retry logic is handled in campaignService on the CRM side (see there)
+//
 // FLOW:
-// 1. CRM Backend POSTs to POST /api/messages/send with:
-//    { logId, customerId, channel, message }
+// 1. CRM Backend POSTs to POST /channel/send with:
+//    { communicationId, customer: { name, email, phone }, channel, message }
 //
-// 2. This controller calls deliverySimulator to simulate actual delivery
+// 2. This controller immediately responds 202 Accepted
+//    WHY 202 and not 200?
+//    HTTP 200 means "done". HTTP 202 means "I accepted the task, processing async."
+//    202 is semantically correct here — delivery hasn't happened yet.
 //
-// 3. After delivery (success or failure), it POSTs back to CRM Backend at
-//    POST /api/campaigns/receipt with:
-//    { logId, status: 'sent' | 'failed', failureReason? }
+// 3. AFTER the response, simulateFullLifecycle runs in the background.
+//    It fires multiple POSTs back to the CRM receipt endpoint:
+//      sent → delivered → opened → clicked  (or → failed)
 //
-// WHY ASYNC CALLBACK INSTEAD OF RETURNING THE RESULT?
-// Because real delivery is async — you send an SMS and Twilio tells you
-// hours later if it was delivered. This pattern mimics that reality.
-// The CRM Backend doesn't block waiting for delivery — it just dispatches
-// and the receipt comes back whenever it's ready.
+// In production: step 3 would be replaced by publishing a message to a
+// Kafka topic ("messages-to-send"), and a separate worker service would
+// consume from that topic. This controller would just enqueue the job.
 
-const axios = require('axios');
-const { simulateDelivery } = require('../services/deliverySimulator');
+const { simulateFullLifecycle } = require('../services/deliverySimulator');
 
-// ─── POST /api/messages/send ──────────────────────────────────────────────────
+// ─── POST /channel/send ───────────────────────────────────────────────────────
 const sendMessage = async (req, res) => {
-  const { logId, customerId, channel, message } = req.body;
+  const { communicationId, customer, channel, message } = req.body;
 
   // Validate required fields
-  if (!logId || !channel || !message) {
+  if (!communicationId || !channel || !message || !customer) {
     return res.status(400).json({
       success: false,
-      message: 'logId, channel, and message are required',
+      message: 'communicationId, customer, channel, and message are required',
     });
   }
 
-  // ── Respond immediately to CRM Backend ────────────────────────────────────
-  // We send 202 Accepted RIGHT NOW — the channel-service has ACCEPTED the job.
-  // The actual delivery happens asynchronously AFTER this response.
-  //
-  // WHY 202 and not 200?
-  // HTTP 202 = "I received your request and will process it, but I'm not done yet."
-  // This is semantically correct for async jobs.
+  // ── Respond IMMEDIATELY — do not block waiting for delivery ──────────────
+  // The CRM backend's dispatch loop is waiting for this 202.
+  // Returning quickly lets the dispatch loop move on to the next customer.
   res.status(202).json({
     success: true,
-    message: 'Message accepted for delivery',
-    logId,
+    status: 'accepted',
+    communicationId,
   });
 
-  // ── Simulate delivery asynchronously ──────────────────────────────────────
-  // This runs AFTER the response is already sent to the CRM Backend.
-  // Node.js event loop handles this naturally.
-  try {
-    const result = await simulateDelivery(channel, message);
+  // ── Simulate full delivery lifecycle AFTER response ───────────────────────
+  // Node.js event loop: the response is sent, then the async function below
+  // continues running in the background without blocking any other requests.
+  //
+  // The CRM receipt URL — channel-service calls back here after each status event.
+  const crmUrl = process.env.CRM_BACKEND_URL || 'http://localhost:5001';
+  const crmReceiptUrl = `${crmUrl}/api/receipts/channel`;
 
-    // ── Callback: POST delivery receipt to CRM Backend ────────────────────
-    const crmUrl = process.env.CRM_BACKEND_URL || 'http://localhost:5001';
-
-    await axios.post(`${crmUrl}/api/campaigns/receipt`, {
-      logId,
-      status: result.status,
-      failureReason: result.failureReason || null,
-    });
-
-    console.log(`[CHANNEL-SERVICE] Receipt sent | logId: ${logId} | status: ${result.status}`);
-  } catch (err) {
-    // If the callback to CRM fails, log it — the log will remain 'pending'
-    // In production, this would be retried via a message queue (SQS, RabbitMQ).
-    console.error(`[CHANNEL-SERVICE] Failed to send receipt for logId ${logId}: ${err.message}`);
-  }
+  // Fire and forget — errors are handled inside simulateFullLifecycle
+  simulateFullLifecycle(communicationId, channel, message, crmReceiptUrl).catch((err) => {
+    console.error(`[CHANNEL-SERVICE] Lifecycle simulation error for ${communicationId}: ${err.message}`);
+    // In production this can move to a Kafka dead-letter queue or retry queue
+  });
 };
 
 module.exports = { sendMessage };

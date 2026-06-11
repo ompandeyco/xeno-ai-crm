@@ -25,7 +25,18 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
+// ─── Root Route ──────────────────────────────────────────────────────────────
+// Returns immediately when someone opens the base URL — confirms service is alive.
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Xeno Channel Service Running',
+    version: '1.0.0',
+  });
+});
+
 // ─── Health Check ────────────────────────────────────────────────────────────
+// Detailed ping for Docker healthchecks / uptime monitors.
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -35,8 +46,9 @@ app.get('/health', (req, res) => {
 });
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
-// POST /api/messages/send — receive dispatch request from CRM Backend
-app.use('/api/messages', messageRoutes);
+// Routes are mounted at root '/' so the full path is: POST /channel/send
+// This matches the spec exactly.
+app.use('/', messageRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
