@@ -1,0 +1,23 @@
+# Root-level safety net — catches any .env files not covered by subdirectory .gitignores
+.env
+.env.local
+.env.*.local
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build outputs
+dist/
+build/
+
+# Dependencies (each service has its own, but catch any root-level installs)
+node_modules/
