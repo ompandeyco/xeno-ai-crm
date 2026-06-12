@@ -35,11 +35,12 @@ const Dashboard = () => {
     const fetchStats = async () => {
       try {
         const [customersRes, campaignsRes] = await Promise.all([
-          api.get('/customers'),
+          api.get('/customers?limit=1'),   // We only need the pagination total, not all records
           api.get('/campaigns')
         ]);
         
-        const customersCount = customersRes.data.data.length || 0;
+        // Total comes from pagination metadata — data.length is just the current page size
+        const customersCount = customersRes.data.pagination?.totalCustomers || 0;
         const campaigns = campaignsRes.data.data || [];
         const totalCampaigns = campaigns.length;
         

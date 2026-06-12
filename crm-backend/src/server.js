@@ -7,8 +7,23 @@
 //
 // This prevents a race condition where requests arrive before DB is ready.
 
+const path   = require('path');
 const dotenv = require('dotenv');
-dotenv.config(); // Must be before any other import that reads process.env
+
+// EXPLICIT PATH — guarantees we always load crm-backend/.env regardless of
+// which directory the process is started from (e.g. repo root vs crm-backend/).
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// ── Safe debug: confirm MONGO_URI loaded (password is NOT printed) ──────────
+console.log('[boot] MONGO_URI loaded:', !!process.env.MONGO_URI);
+if (process.env.MONGO_URI) {
+  const uri = process.env.MONGO_URI;
+  // Show only scheme + username + host — never the password
+  const safeUri = uri.replace(/:\/\/([^:]+):[^@]+@/, '://$1:***@');
+  console.log('[boot] MONGO_URI (safe):', safeUri);
+} else {
+  console.error('[boot] ❌ MONGO_URI is undefined — check crm-backend/.env exists and is populated');
+}
 
 const app = require('./app');
 const connectDB = require('./config/database');

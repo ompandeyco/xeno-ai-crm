@@ -26,7 +26,16 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 
 // ─── Core Middleware ─────────────────────────────────────────────────────────
-app.use(cors());            // Allow cross-origin requests from the React frontend
+// CORS: Allow requests from the Vite dev server (port 5173) and any production domain.
+// Note: In dev the Vite proxy handles API calls, so this mainly covers direct browser calls.
+app.use(cors({
+  origin: [
+    'http://localhost:5173',  // Vite dev server
+    'http://localhost:3000',  // fallback if CRA or other tooling used
+    'http://127.0.0.1:5173',
+  ],
+  credentials: true,
+}));
 app.use(morgan('dev'));     // Log every request: method, path, status, response time
 app.use(express.json());    // Parse JSON request bodies — req.body will be populated
 
