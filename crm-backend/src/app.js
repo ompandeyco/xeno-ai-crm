@@ -26,17 +26,32 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 
 // ─── Core Middleware ─────────────────────────────────────────────────────────
-// CORS: Allow requests from the Vite dev server (port 5173) and any production domain.
-// Note: In dev the Vite proxy handles API calls, so this mainly covers direct browser calls.
-app.use(cors({
-  origin: [
-    'https://xeno-ai-crm.vercel.app', // Production frontend (Vercel)
-    'http://localhost:5173',           // Vite dev server
-    'http://localhost:3000',           // fallback if CRA or other tooling used
-    'http://127.0.0.1:5173',
-  ],
+// CORS — MUST be the very first middleware so every response (including errors
+// and preflight OPTIONS) carries the correct Access-Control-Allow-Origin header.
+const ALLOWED_ORIGINS = [
+  'https://xeno-ai-crm.vercel.app', // Production frontend (Vercel)
+  'http://localhost:5173',           // Vite dev server
+  'http://localhost:3000',           // CRA / other local tooling
+  'http://127.0.0.1:5173',
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow server-to-server requests (no Origin header) and whitelisted origins
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Blocked by CORS: ' + origin));
+    }
+  },
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));          // Apply CORS to all routes
+app.options('*', cors(corsOptions)); // Explicitly handle all preflight OPTIONS requests
+
 app.use(morgan('dev'));     // Log every request: method, path, status, response time
 app.use(express.json());    // Parse JSON request bodies — req.body will be populated
 
