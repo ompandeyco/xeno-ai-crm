@@ -544,14 +544,31 @@ Delivery receipts are machine-to-machine traffic (not user-facing). Isolating th
 
 ## 17. Screenshots
 
-> 📸 **Screenshots coming soon.** The live demo is available at [xeno-ai-crm.vercel.app](https://xeno-ai-crm.vercel.app).
+### Dashboard
+![Dashboard](assets/dashboard.png)
 
-| Page | Description |
-| :--- | :--- |
-| Dashboard | KPI cards + customer growth + revenue charts |
-| Customers | Searchable customer table with purchase history |
-| Campaign Studio | AI goal input → segment preview → message generation → launch |
-| Analytics | Campaign funnel charts + AI-generated performance insights |
+KPI overview cards (1,000 customers, campaign + message counters), 7-day Campaign Performance line chart with interactive tooltips, and Channel Breakdown bar chart (WhatsApp / Email / SMS).
+
+---
+
+### AI Campaign Studio
+![AI Studio](assets/ai-studio.png)
+
+Step-by-step AI workflow: marketer types a plain-English campaign goal → Gemini returns a named audience segment with structured rules (minSpend, inactiveDays) → message template is auto-generated per channel.
+
+---
+
+### Customers
+![Customers](assets/customers.png)
+
+Searchable, filterable customer table showing name, city, total spend (₹), order count, and preferred channel. Backed by 1,000 seeded profiles with denormalized purchase summaries.
+
+---
+
+### Analytics
+![Analytics](assets/analytics.png)
+
+Campaign funnel cards (Audience / Sent / Delivered / Opened / Clicked) with COMPLETED status badges, plus the AI Insights panel with Gemini-generated summary and ranked recommendations.
 
 ---
 
