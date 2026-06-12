@@ -30,8 +30,9 @@ const app = express();
 // Note: In dev the Vite proxy handles API calls, so this mainly covers direct browser calls.
 app.use(cors({
   origin: [
-    'http://localhost:5173',  // Vite dev server
-    'http://localhost:3000',  // fallback if CRA or other tooling used
+    'https://xeno-ai-crm.vercel.app', // Production frontend (Vercel)
+    'http://localhost:5173',           // Vite dev server
+    'http://localhost:3000',           // fallback if CRA or other tooling used
     'http://127.0.0.1:5173',
   ],
   credentials: true,
